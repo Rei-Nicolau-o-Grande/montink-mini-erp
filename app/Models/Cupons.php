@@ -8,5 +8,11 @@ class Cupons extends Model
 {
     protected $table = 'cupons';
 
-    protected $fillable = [];
+    protected $fillable = [
+        'codigo',
+        'desconto_percentual',
+        'valor_minimo',
+        'validade',
+        'ativo',
+    ];
 }

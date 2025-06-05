@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('cupons', function (Blueprint $table) {
             $table->id();
+            $table->string('codigo');
+            $table->decimal('desconto_percentual', 5, 2);
+            $table->decimal('valor_minimo', 15, 2);
+            $table->date('validade');
+            $table->boolean('ativo')->default(true);
             $table->timestamps();
         });
     }

@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('estoque', function (Blueprint $table) {
+        Schema::create('estoques', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('produto_id');
+            $table->foreign('produto_id')->references('id')->on('produtos');
+            $table->string('variacao')->nullable();
+            $table->bigInteger('quantidade');
+            $table->boolean('ativo')->default(true);
             $table->timestamps();
         });
     }

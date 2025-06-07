@@ -12,6 +12,7 @@
                     <h2 class="card-title text-lg font-bold">{{ $produto->nome }}</h2>
                     <p class="text-gray-700">Preço: <strong>R$ {{ number_format($produto->preco, 2, ',', '.') }}</strong></p>
                     <div class="card-actions justify-end mt-4">
+                        <a class="btn btn-secondary btn-sm" href="{{ route('produto.edit', $produto) }}">Editar Produto e Estoque</a>
                         <button class="btn btn-primary btn-sm" onclick="document.getElementById('modal-{{ $produto->id }}').showModal()">
                             Ver Variações
                         </button>

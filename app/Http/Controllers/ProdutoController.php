@@ -17,7 +17,10 @@ class ProdutoController extends Controller
      */
     public function index(): View
     {
-        return view('produto.index');
+        $produtos = Produto::with('estoques')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+        return view('produto.index', compact(['produtos']));
     }
 
     /**
@@ -50,7 +53,7 @@ class ProdutoController extends Controller
             }
         });
         return redirect()
-            ->route('home')
+            ->route('produto.index')
             ->with('success', 'Produto cadastrado com sucesso!');
     }
 
@@ -104,7 +107,7 @@ class ProdutoController extends Controller
         });
 
         return redirect()
-            ->route('home')
+            ->route('produto.index')
             ->with('success', 'Produto atualizado com sucesso!');
     }
 

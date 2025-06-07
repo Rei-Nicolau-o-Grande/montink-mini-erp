@@ -24,6 +24,6 @@
 
 <x-variacoes-model :produto="$produto" />
 
-<x-save-back-buttons :cancelRoute="url()->previous()" />
+<x-save-back-buttons :produto="$produto" />
 
 <script src="{{ asset('js/form-produto.js') }}"></script>

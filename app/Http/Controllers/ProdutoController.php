@@ -20,7 +20,13 @@ class ProdutoController extends Controller
         $produtos = Produto::with('estoques')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
-        return view('produto.index', compact(['produtos']));
+
+        $carrinhoData = app(CarrinhoController::class)->show();
+
+        return view('produto.index', array_merge(
+            ['produtos' => $produtos],
+            $carrinhoData
+        ));
     }
 
     /**

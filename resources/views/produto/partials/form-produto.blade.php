@@ -24,6 +24,6 @@
 
 <x-variacoes-model :produto="$produto" />
 
-<x-save-back-buttons :produto="$produto" />
+<x-save-back-buttons :model="$produto" :routeBack="'produto.index'" />
 
 <script src="{{ asset('js/form-produto.js') }}"></script>

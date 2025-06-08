@@ -21,3 +21,4 @@ Route::post('/cupons/store', [CupomController::class, 'store'])->name('cupons.st
 Route::get('/cupons/{cupom}/edit', [CupomController::class, 'edit'])->name('cupons.edit');
 Route::put('/cupons/{cupom}', [CupomController::class, 'update'])->name('cupons.update');
 Route::delete('cupons/{cupom}', [CupomController::class, 'destroy'])->name('cupons.delete');
+Route::patch('/cupons/{cupom}', [CupomController::class, 'active'])->name('cupons.active');

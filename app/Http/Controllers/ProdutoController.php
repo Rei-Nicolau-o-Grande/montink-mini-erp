@@ -76,7 +76,6 @@ class ProdutoController extends Controller
      */
     public function edit(Produto $produto): View
     {
-//        $produto->load('estoques');
         return view('produto.form', compact('produto'));
     }
 

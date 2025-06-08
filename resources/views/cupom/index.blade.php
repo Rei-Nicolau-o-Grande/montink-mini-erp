@@ -45,6 +45,7 @@
                                 :model="$cupom"
                                 :routeEditar="'cupons.edit'"
                                 :routeExcluir="'cupons.delete'"
+                                :routeAtivar="'cupons.active'"
                             />
                         </td>
                     </tr>

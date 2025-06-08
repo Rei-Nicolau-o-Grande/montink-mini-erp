@@ -6,7 +6,8 @@
     <x-alert />
     <h1 class="text-2xl text-center mt-10 font-bold">Listagem de Produtos</h1>
 
-    <div class="flex justify-end px-10 mt-6">
+    <div class="flex justify-end px-10 mt-6 gap-1">
+        <a class="btn btn-primary" href="{{ route('cupons.index') }}">Ver Cupons</a>
         <a class="btn btn-success" href="{{ route('produto.create') }}">Criar Produto</a>
     </div>
 

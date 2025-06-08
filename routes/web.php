@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CarrinhoController;
+use App\Http\Controllers\CupomController;
 use App\Http\Controllers\ProdutoController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,3 +13,11 @@ Route::put('/produto/{produto}', [ProdutoController::class, 'update'])->name('pr
 Route::post('/carrinho/add', [CarrinhoController::class, 'addToCart'])->name('carrinho.add');
 Route::post('/carrinho/update/quantidade', [CarrinhoController::class, 'updateQuantidadeCart'])->name('carrinho.update.quantidade');
 Route::post('/carrinho/remove', [CarrinhoController::class, 'removeItemCart'])->name('carrinho.remove');
+
+
+Route::get('/cupons', [CupomController::class, 'index'])->name('cupons.index');
+Route::get('/cupons/create', [CupomController::class, 'create'])->name('cupons.create');
+Route::post('/cupons/store', [CupomController::class, 'store'])->name('cupons.store');
+Route::get('/cupons/{cupom}/edit', [CupomController::class, 'edit'])->name('cupons.edit');
+Route::put('/cupons/{cupom}', [CupomController::class, 'update'])->name('cupons.update');
+Route::delete('cupons/{cupom}', [CupomController::class, 'destroy'])->name('cupons.delete');

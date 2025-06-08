@@ -14,6 +14,7 @@
     <div class="flex flex-col lg:flex-row gap-6 p-10 items-start">
 
         <x-carrinho
+            :endereco="$endereco"
             :carrinho="$carrinho"
             :cupom="$cupom"
             :desconto="$desconto"

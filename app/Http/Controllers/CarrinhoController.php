@@ -7,6 +7,7 @@ use App\Models\Estoque;
 use App\Models\Produto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class CarrinhoController extends Controller
 {
@@ -95,7 +96,9 @@ class CarrinhoController extends Controller
             }
         }
 
-        return compact('carrinho', 'frete', 'subtotal', 'total', 'desconto', 'cupom');
+        $endereco = session('cep_dados');
+
+        return compact('carrinho', 'frete', 'subtotal', 'total', 'desconto', 'cupom', 'endereco');
     }
 
     public function aplicarCupom(Request $request): RedirectResponse
@@ -164,5 +167,53 @@ class CarrinhoController extends Controller
         } else {
             return 20.00;
         }
+    }
+
+    function buscarCep(Request $request): RedirectResponse
+    {
+        $cep = preg_replace('/[^0-9]/', '', $request->input('cep'));
+
+        if (strlen($cep) !== 8) {
+            session()->flash('cep_valido', false);
+            session()->flash('cep_mensagem', 'CEP inválido. Deve conter 8 dígitos.');
+            return redirect()->back();
+        }
+
+        $response = Http::get("https://viacep.com.br/ws/{$cep}/json/");
+
+        if ($response->failed() || $response->json('erro')) {
+            session()->flash('cep_valido', false);
+            session()->flash('cep_mensagem', 'CEP não encontrado.');
+            return redirect()->back();
+        }
+
+        $dados = $response->json();
+
+        session()->put('cep', $cep);
+        session()->put('cep_dados', $dados);
+        session()->flash('cep_valido', true);
+        session()->flash('cep_mensagem', 'CEP encontrado com sucesso!');
+
+        return redirect()->back();
+
+    }
+
+    public function removerCupom(): RedirectResponse
+    {
+        session()->forget('cupom_codigo');
+        session()->forget('cupom_validado');
+        session()->forget('cupom_mensagem');
+
+        return redirect()->back()->with('success', 'Cupom removido com sucesso.');
+    }
+
+    public function removerCep(): RedirectResponse
+    {
+        session()->forget('cep');
+        session()->forget('cep_valido');
+        session()->forget('cep_mensagem');
+        session()->forget('cep_dados');
+
+        return redirect()->back()->with('success', 'CEP removido com sucesso.');
     }
 }

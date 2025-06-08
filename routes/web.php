@@ -14,7 +14,11 @@ Route::post('/carrinho/add', [CarrinhoController::class, 'addToCart'])->name('ca
 Route::post('/carrinho/update/quantidade', [CarrinhoController::class, 'updateQuantidadeCart'])->name('carrinho.update.quantidade');
 Route::post('/carrinho/remove', [CarrinhoController::class, 'removeItemCart'])->name('carrinho.remove');
 
-Route::post('/cupom/aplicar', [CarrinhoController::class, 'aplicarCupom'])->name('cupom.aplicar');
+Route::post('/carrinho/cupom/aplicar', [CarrinhoController::class, 'aplicarCupom'])->name('cupom.aplicar');
+Route::post('/carrinho/cep/buscar',   [CarrinhoController::class, 'buscarCep'])->name('carrinho.cep');
+
+Route::post('/carrinho/cupom/remover', [CarrinhoController::class, 'removerCupom'])->name('cupom.remover');
+Route::post('/carrinho/cep/remover', [CarrinhoController::class, 'removerCep'])->name('cep.remover');
 
 Route::get('/cupons', [CupomController::class, 'index'])->name('cupons.index');
 Route::get('/cupons/create', [CupomController::class, 'create'])->name('cupons.create');

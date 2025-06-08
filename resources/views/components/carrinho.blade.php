@@ -1,13 +1,43 @@
 <div class="bg-white p-6 rounded-xl shadow-md w-full lg:w-1/3 border border-gray-200 space-y-4">
     <h2 class="text-xl font-bold text-center">🛒 Carrinho</h2>
-    <div>
-        <input type="text" id="cep" placeholder="Digite o CEP" class="input input-bordered w-full" autocomplete="off">
-        <div id="endereco" class="text-sm text-gray-600 mt-1"></div>
+
+    <div class="">
+        <form action="{{ route('carrinho.cep') }}" method="POST">
+            @csrf
+            @method('POST')
+            <input
+                type="text"
+                name="cep"
+                id="cep"
+                placeholder="Digite seu CEP"
+                class="input input-bordered w-full"
+                autocomplete="off"
+                value="{{ old('cep', session('cep')) }}"
+            >
+
+            @if(session('cep_mensagem'))
+                <div class="text-sm mt-1 {{ session('cep_valido') ? 'text-success' : 'text-error' }}">
+                    {{ session('cep_mensagem') }}
+                </div>
+            @endif
+
+            <div class="mt-2">
+                <button class="btn btn-success btn-sm" type="submit">Buscar</button>
+            </div>
+        </form>
+
+        @if(session('cep_dados'))
+            <form action="{{ route('cep.remover') }}" method="POST" class="mt-2">
+                @csrf
+                <button type="submit" class="btn btn-error btn-sm">Remover CEP</button>
+            </form>
+        @endif
     </div>
 
-    <div>
+    <div class="">
         <form action="{{ route('cupom.aplicar') }}" method="POST">
             @csrf
+            @method('POST')
             <input
                 type="text"
                 name="codigo"
@@ -24,15 +54,36 @@
                 </div>
             @endif
 
-            <button class="btn btn-success mt-2" type="submit">Aplicar</button>
+            <div class="mt-2">
+                <button class="btn btn-success btn-sm" type="submit">Aplicar</button>
+            </div>
         </form>
+
+        @if(session('cupom_codigo'))
+            <form action="{{ route('cupom.remover') }}" method="POST" class="mt-2">
+                @csrf
+                <button type="submit" class="btn btn-error btn-sm">Remover Cupom</button>
+            </form>
+        @endif
     </div>
 
-
+    @if($endereco)
+        <div class="text-sm border-t pt-4 space-y-1">
+            <p><strong>Logradouro:</strong> {{ $endereco['logradouro'] ?? '-' }}</p>
+            <p><strong>Complemento:</strong> {{ $endereco['complemento'] ?? '-' }}</p>
+            <p><strong>Bairro:</strong> {{ $endereco['bairro'] ?? '-' }}</p>
+            <p><strong>Localidade:</strong> {{ $endereco['localidade'] ?? '-' }}</p>
+            <p><strong>UF:</strong> {{ $endereco['uf'] ?? '-' }}</p>
+            <p><strong>Estado:</strong> {{ $endereco['estado'] ?? '-' }}</p>
+            <p><strong>Região:</strong> {{ $endereco['regiao'] ?? '-' }}</p>
+        </div>
+    @endif
 
     <div class="text-sm border-t pt-4 space-y-1">
-        <p><strong>Cupom:</strong> {{ $cupom ?? 'Nenhum' }}</p>
-        <p><strong>Desconto:</strong> R$ {{ number_format($desconto ?? 0, 2, ',', '.') }}</p>
+        @if($cupom && $desconto)
+            <p><strong>Cupom:</strong> {{ $cupom ?? 'Nenhum' }}</p>
+            <p><strong>Desconto:</strong> R$ {{ number_format($desconto ?? 0, 2, ',', '.') }}</p>
+        @endif
 
         <p><strong>Frete:</strong> R$ <span id="frete">{{ number_format($frete, 2, ',', '.') }}</span></p>
         <p><strong>SubTotal:</strong> R$ <span id="subtotal">{{ number_format($subtotal, 2, ',', '.') }}</span></p>
@@ -77,5 +128,3 @@
         @endforelse
     </div>
 </div>
-
-<script src="{{ asset('js/cep.js') }}"></script>

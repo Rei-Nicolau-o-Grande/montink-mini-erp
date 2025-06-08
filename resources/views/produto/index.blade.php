@@ -15,6 +15,8 @@
 
         <x-carrinho
             :carrinho="$carrinho"
+            :cupom="$cupom"
+            :desconto="$desconto"
             :frete="$frete"
             :subtotal="$subtotal"
             :total="$total"

@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } catch {
                     enderecoDiv.innerText = 'Erro ao buscar o CEP.';
                 }
-            }, 400);
+            }, 100);
         }
     });
 });

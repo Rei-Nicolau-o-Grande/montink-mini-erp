@@ -5,7 +5,35 @@
         <div id="endereco" class="text-sm text-gray-600 mt-1"></div>
     </div>
 
+    <div>
+        <form action="{{ route('cupom.aplicar') }}" method="POST">
+            @csrf
+            <input
+                type="text"
+                name="codigo"
+                id="codigo-cupom"
+                placeholder="Digite um Cupom Válido"
+                class="input input-bordered w-full"
+                autocomplete="off"
+                value="{{ old('codigo', session('cupom_codigo')) }}"
+            >
+
+            @if(session('cupom_mensagem'))
+                <div class="text-sm mt-1 {{ session('cupom_valido') ? 'text-success' : 'text-error' }}">
+                    {{ session('cupom_mensagem') }}
+                </div>
+            @endif
+
+            <button class="btn btn-success mt-2" type="submit">Aplicar</button>
+        </form>
+    </div>
+
+
+
     <div class="text-sm border-t pt-4 space-y-1">
+        <p><strong>Cupom:</strong> {{ $cupom ?? 'Nenhum' }}</p>
+        <p><strong>Desconto:</strong> R$ {{ number_format($desconto ?? 0, 2, ',', '.') }}</p>
+
         <p><strong>Frete:</strong> R$ <span id="frete">{{ number_format($frete, 2, ',', '.') }}</span></p>
         <p><strong>SubTotal:</strong> R$ <span id="subtotal">{{ number_format($subtotal, 2, ',', '.') }}</span></p>
         <p><strong>Total:</strong> R$ <span id="total">{{ number_format($total, 2, ',', '.') }}</span></p>

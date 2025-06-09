@@ -52,7 +52,7 @@
                 @empty
                     <tr>
                         <td colspan="7" class="text-center py-4 text-lg text-black">
-                            Nenhum registro encontrado.
+                            Nenhum Cupom encontrado.
                         </td>
                     </tr>
                 @endforelse

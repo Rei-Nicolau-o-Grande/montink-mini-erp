@@ -22,6 +22,6 @@ class Produto extends Model
 
     public function pedidoProdutos(): HasMany
     {
-        return $this->hasMany(Pedido::class);
+        return $this->hasMany(PedidoProduto::class);
     }
 }

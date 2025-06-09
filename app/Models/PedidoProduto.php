@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PedidoProduto extends Model
 {
@@ -16,4 +17,14 @@ class PedidoProduto extends Model
         'preco_unitario',
         'subtotal',
     ];
+
+    public function pedido(): BelongsTo
+    {
+        return $this->belongsTo(Pedido::class);
+    }
+
+    public function produto(): BelongsTo
+    {
+        return $this->belongsTo(Produto::class);
+    }
 }

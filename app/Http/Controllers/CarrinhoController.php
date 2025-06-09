@@ -167,6 +167,21 @@ class CarrinhoController extends Controller
             return back()->with('email_cliente_mensagem', 'O email não pode ficar em branco.');
         }
 
+        foreach ($carrinho as $item) {
+            $produto = Produto::find($item['produto_id']);
+            $estoque = $produto->estoques()
+                ->where('variacao', $item['variacao'])
+                ->first();
+
+            if (!$estoque || $estoque->quantidade < $item['quantidade']) {
+                return back()->with('error', "Produto '{$produto->nome}' com variação '{$item['variacao']}' sem estoque suficiente.");
+            }
+
+            $estoque->update([
+                'quantidade' => $estoque->quantidade - $item['quantidade'],
+            ]);
+        }
+
         $pedido = Pedido::create([
             'valor_total' => $total,
             'frete' => $frete,
@@ -192,21 +207,6 @@ class CarrinhoController extends Controller
                 'quantidade' => $item['quantidade'],
                 'preco_unitario' => $item['preco'],
                 'subtotal' => $item['preco'] * $item['quantidade'],
-            ]);
-        }
-
-        foreach ($carrinho as $item) {
-            $produto = Produto::find($item['produto_id']);
-            $estoque = $produto->estoques()
-                ->where('variacao', $item['variacao'])
-                ->first();
-
-            if (!$estoque || $estoque->quantidade < $item['quantidade']) {
-                return back()->with('error', "Produto '{$produto->nome}' com variação '{$item['variacao']}' sem estoque suficiente.");
-            }
-
-            $estoque->update([
-                'quantidade' => $estoque->quantidade - $item['quantidade'],
             ]);
         }
 
@@ -246,7 +246,7 @@ class CarrinhoController extends Controller
 
     public function validateCupom(string $codigo, float $subtotal): array
     {
-        $cupom = Cupom::where('codigo', $codigo)->first();
+        $cupom = Cupom::whereRaw('BINARY codigo = ?', [$codigo])->first();
 
         if (!$cupom) {
             return ['valido' => false, 'mensagem' => 'Cupom não encontrado.'];

@@ -8,8 +8,9 @@
 <body>
     <h1>Pedido Recebido</h1>
     <p>Olá! Seu pedido foi finalizado com sucesso.</p>
-    <p><strong>Total:</strong> R$ {{ number_format($pedido['valor_total'], 2, ',', '.') }}</p>
     <p><strong>Status:</strong> {{ $pedido['status'] }}</p>
+    <p><strong>Frete:</strong> R$ {{ number_format($pedido['frete'], 2, ',', '.') }}</p>
+    <p><strong>Total:</strong> R$ {{ number_format($pedido['valor_total'], 2, ',', '.') }}</p>
     <hr>
     <h2>Itens:</h2>
     <ul>

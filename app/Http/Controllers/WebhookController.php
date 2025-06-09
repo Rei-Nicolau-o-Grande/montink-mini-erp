@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StatusPedidos;
+use App\Mail\EnviarPedidoStatus;
 use App\Models\Pedido;
 use App\Models\Produto;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class WebhookController extends Controller
 {
@@ -45,11 +47,15 @@ class WebhookController extends Controller
                 }
             }
 
+            Mail::to($pedido->email_cliente)->send(new EnviarPedidoStatus($pedido->toArray()));
+
             return response()->json(['message' => 'Pedido cancelado.']);
         }
 
         $pedido->status = $request->status;
         $pedido->save();
+
+        Mail::to($pedido->email_cliente)->send(new EnviarPedidoStatus($pedido->toArray()));
 
         return response()->json(['message' => 'Status do pedido atualizado com sucesso.']);
     }

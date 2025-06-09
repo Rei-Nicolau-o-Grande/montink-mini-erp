@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('produto_id');
             $table->foreign('pedido_id')->references('id')->on('pedidos');
             $table->foreign('produto_id')->references('id')->on('produtos');
-            $table->string('variacao')->nullable();
+            $table->string('variacao');
             $table->integer('quantidade');
             $table->decimal('preco_unitario', 15, 2);
             $table->decimal('subtotal', 15, 2);

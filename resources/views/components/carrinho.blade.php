@@ -90,6 +90,28 @@
         <p><strong>Total:</strong> R$ <span id="total">{{ number_format($total, 2, ',', '.') }}</span></p>
     </div>
 
+    <div class="text-sm border-t pt-4 space-y-1">
+        <form action="{{ route('finalizar.pedido') }}" method="post">
+            @csrf
+            @method('POST')
+            <input
+                type="email"
+                name="email_cliente"
+                id="email-cliente"
+                placeholder="Digite o seu E-mail"
+                class="input input-bordered w-full"
+                autocomplete="off"
+                value="{{ old('email_cliente') }}"
+            >
+            @if(session('email_cliente_mensagem'))
+                <div class="text-sm mt-1 text-error">
+                    {{ session('email_cliente_mensagem') }}
+                </div>
+            @endif
+            <button class="btn btn-success btn-sm mt-2 w-full" type="submit">Finalizar Pedido</button>
+        </form>
+    </div>
+
     <div class="space-y-4 border-t pt-4 max-h-[400px] overflow-y-auto">
         @forelse ($carrinho as $indice => $item)
             @php

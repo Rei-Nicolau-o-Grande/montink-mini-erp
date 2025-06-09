@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StatusPedidos;
+use App\Mail\EnviarPedido;
 use App\Models\Cupom;
 use App\Models\Estoque;
+use App\Models\Pedido;
+use App\Models\PedidoProduto;
 use App\Models\Produto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 
 class CarrinhoController extends Controller
 {
@@ -22,30 +27,25 @@ class CarrinhoController extends Controller
         $estoque = Estoque::find($request->estoque_id);
 
         if ($estoque->quantidade <= 0) {
-            return redirect()->back()->with('error', 'Estoque esgotado!');
+            return back()->with('error', 'Estoque esgotado!');
         }
 
         $carrinho = session()->get('carrinho', []);
-
         $chave = $estoque->id;
 
-        if (isset($carrinho[$chave])) {
-            $carrinho[$chave]['quantidade']++;
-        } else {
-            $carrinho[$chave] = [
+        $carrinho[$chave] = isset($carrinho[$chave])
+            ? array_merge($carrinho[$chave], ['quantidade' => $carrinho[$chave]['quantidade'] + 1])
+            : [
                 'produto_id' => $produto->id,
                 'nome' => $produto->nome,
                 'variacao' => $estoque->variacao,
                 'quantidade' => 1,
                 'preco' => $produto->preco,
             ];
-        }
 
         session()->put('carrinho', $carrinho);
 
-        return redirect()
-            ->back()
-            ->with('success', 'Produto adicionado ao carrinho!');
+        return back()->with('success', 'Produto adicionado ao carrinho!');
     }
 
     public function removeItemCart(Request $request): RedirectResponse
@@ -78,25 +78,13 @@ class CarrinhoController extends Controller
     public function show(): array
     {
         $carrinho = session('carrinho', []);
-        $subtotal = collect($carrinho)->sum(fn($item) => $item['preco'] * $item['quantidade']);
+        $subtotal = $this->calcularSubtotal($carrinho);
         $frete = $this->calcularFrete($subtotal);
-        $total = $subtotal + $frete;
 
-        $cupom = session('cupom_codigo');
-        $desconto = 0;
+        [$desconto, $cupom] = $this->obterCupomValidado($subtotal);
+        $total = $subtotal + $frete - $desconto;
 
-        if ($cupom) {
-            $validacao = $this->validateCupom($cupom, $subtotal);
-
-            if (!empty($validacao['valido']) && $validacao['valido'] === true) {
-                $desconto = $validacao['desconto'];
-                $total -= $desconto;
-            } else {
-                session()->forget('cupom_codigo');
-            }
-        }
-
-        $endereco = session('cep_dados');
+        $endereco = $this->obterEnderecoSessao();
 
         return compact('carrinho', 'frete', 'subtotal', 'total', 'desconto', 'cupom', 'endereco');
     }
@@ -104,29 +92,157 @@ class CarrinhoController extends Controller
     public function aplicarCupom(Request $request): RedirectResponse
     {
         $codigo = $request->input('codigo');
-        if ($codigo == null || $codigo == '') {
+        if (!$codigo) {
             return back()->with('cupom_mensagem', 'Digite um cupom!');
         }
 
-        $carrinho = session('carrinho', []);
-        $subtotal = collect($carrinho)->sum(fn($item) => $item['preco'] * $item['quantidade']);
-
+        $subtotal = $this->calcularSubtotal(session('carrinho', []));
         $validacao = $this->validateCupom($codigo, $subtotal);
 
         if (!$validacao['valido']) {
-            session()->flash('cupom_valido', false);
-            session()->flash('cupom_mensagem', $validacao['mensagem']);
             session()->forget('cupom_codigo');
-        } else {
-            session()->put('cupom_codigo', $codigo);
-            session()->flash('cupom_valido', true);
-            session()->flash('cupom_mensagem', 'Cupom aplicado com sucesso!');
+            return back()
+                ->with('cupom_valido', false)
+                ->with('cupom_mensagem', $validacao['mensagem']);
         }
 
-        return redirect()->back();
+        session()->put('cupom_codigo', $codigo);
+        return back()
+            ->with('cupom_valido', true)
+            ->with('cupom_mensagem', 'Cupom aplicado com sucesso!');
     }
 
+    public function removerCupom(): RedirectResponse
+    {
+        session()->forget(['cupom_codigo', 'cupom_valido', 'cupom_mensagem']);
+        return back()->with('success', 'Cupom removido com sucesso.');
+    }
 
+    public function buscarCep(Request $request): RedirectResponse
+    {
+        $cep = preg_replace('/[^0-9]/', '', $request->input('cep'));
+
+        if (strlen($cep) !== 8) {
+            return back()->with('cep_valido', false)->with('cep_mensagem', 'CEP inválido.');
+        }
+
+        $response = Http::get("https://viacep.com.br/ws/{$cep}/json/");
+
+        if ($response->failed() || $response->json('erro')) {
+            return back()->with('cep_valido', false)->with('cep_mensagem', 'CEP não encontrado.');
+        }
+
+        session()->put('cep', $cep);
+        session()->put('cep_dados', $response->json());
+
+        return back()->with('cep_valido', true)->with('cep_mensagem', 'CEP encontrado com sucesso!');
+    }
+
+    public function removerCep(): RedirectResponse
+    {
+        session()->forget(['cep', 'cep_valido', 'cep_mensagem', 'cep_dados']);
+        return back()->with('success', 'CEP removido com sucesso.');
+    }
+
+    public function finalizarPedido(Request $request): RedirectResponse
+    {
+        $carrinho =  $this->show()['carrinho'];
+        $subtotal = $this->calcularSubtotal($carrinho);
+        $frete = $this->calcularFrete($subtotal);
+
+        [$desconto, $cupom] = $this->obterCupomValidado($subtotal);
+        $total = $subtotal + $frete - $desconto;
+
+        $endereco = $this->obterEnderecoSessao();
+
+        if (session()->get('cep') == null) {
+            return back()->with('cep_mensagem', 'Cep não pode ficar em branco.');
+        }
+
+        if (count($carrinho) <= 0) {
+            return back()->with('error', 'O carrinho estar vazio.');
+        }
+
+        if ($request->input('email_cliente') == null) {
+            return back()->with('email_cliente_mensagem', 'O email não pode ficar em branco.');
+        }
+
+        $pedido = Pedido::create([
+            'valor_total' => $total,
+            'frete' => $frete,
+            'status' => StatusPedidos::AGUARDANDO->name,
+            'email_cliente' => $request->input('email_cliente'),
+            'cupom' => $cupom,
+            'cep' => $endereco['cep'],
+            'logradouro' => $endereco['logradouro'],
+            'complemento' => $endereco['complemento'] ?? '',
+            'bairro' => $endereco['bairro'],
+            'localidade' => $endereco['localidade'],
+            'uf' => $endereco['uf'],
+            'estado' => $endereco['estado'] ?? '',
+            'regiao' => $endereco['regiao'] ?? '',
+            'ativo' => true,
+        ]);
+
+        foreach ($carrinho as $item) {
+            PedidoProduto::create([
+                'pedido_id' => $pedido->id,
+                'produto_id' => $item['produto_id'],
+                'variacao' => $item['variacao'],
+                'quantidade' => $item['quantidade'],
+                'preco_unitario' => $item['preco'],
+                'subtotal' => $item['preco'] * $item['quantidade'],
+            ]);
+        }
+
+        foreach ($carrinho as $item) {
+            $produto = Produto::find($item['produto_id']);
+            $estoque = $produto->estoques()
+                ->where('variacao', $item['variacao'])
+                ->first();
+
+            if (!$estoque || $estoque->quantidade < $item['quantidade']) {
+                return back()->with('error', "Produto '{$produto->nome}' com variação '{$item['variacao']}' sem estoque suficiente.");
+            }
+
+            $estoque->update([
+                'quantidade' => $estoque->quantidade - $item['quantidade'],
+            ]);
+        }
+
+        Mail::to($pedido->email_cliente)->send(new EnviarPedido($pedido->toArray(), $carrinho));
+
+        session()->forget(['carrinho', 'cep_dados', 'cupom_codigo', 'cep']);
+
+        return redirect()->route('produto.index')->with('success', 'Pedido finalizado com sucesso.');
+    }
+
+    private function calcularSubtotal(array $carrinho): float
+    {
+        return collect($carrinho)->sum(fn($item) => $item['preco'] * $item['quantidade']);
+    }
+
+    private function obterCupomValidado(float $subtotal): array
+    {
+        $codigo = session('cupom_codigo');
+        if (!$codigo) {
+            return [0, null];
+        }
+
+        $validacao = $this->validateCupom($codigo, $subtotal);
+
+        if ($validacao['valido']) {
+            return [$validacao['desconto'], $validacao['cupom']];
+        }
+
+        session()->forget('cupom_codigo');
+        return [0, null];
+    }
+
+    private function obterEnderecoSessao(): ?array
+    {
+        return session('cep_dados', []);
+    }
 
     public function validateCupom(string $codigo, float $subtotal): array
     {
@@ -136,12 +252,8 @@ class CarrinhoController extends Controller
             return ['valido' => false, 'mensagem' => 'Cupom não encontrado.'];
         }
 
-        if (!$cupom->ativo) {
-            return ['valido' => false, 'mensagem' => 'Cupom inativo.'];
-        }
-
-        if (now()->gt($cupom->validade)) {
-            return ['valido' => false, 'mensagem' => 'Cupom expirado.'];
+        if (!$cupom->ativo || now()->gt($cupom->validade)) {
+            return ['valido' => false, 'mensagem' => 'Cupom expirado ou inativo.'];
         }
 
         if ($subtotal < $cupom->valor_minimo) {
@@ -157,63 +269,12 @@ class CarrinhoController extends Controller
         ];
     }
 
-
     public function calcularFrete($subtotal): float
     {
-        if ($subtotal >= 200.00) {
-            return 0.00;
-        } elseif ($subtotal >= 52.00 && $subtotal <= 166.59) {
-            return 15.00;
-        } else {
-            return 20.00;
-        }
-    }
-
-    function buscarCep(Request $request): RedirectResponse
-    {
-        $cep = preg_replace('/[^0-9]/', '', $request->input('cep'));
-
-        if (strlen($cep) !== 8) {
-            session()->flash('cep_valido', false);
-            session()->flash('cep_mensagem', 'CEP inválido. Deve conter 8 dígitos.');
-            return redirect()->back();
-        }
-
-        $response = Http::get("https://viacep.com.br/ws/{$cep}/json/");
-
-        if ($response->failed() || $response->json('erro')) {
-            session()->flash('cep_valido', false);
-            session()->flash('cep_mensagem', 'CEP não encontrado.');
-            return redirect()->back();
-        }
-
-        $dados = $response->json();
-
-        session()->put('cep', $cep);
-        session()->put('cep_dados', $dados);
-        session()->flash('cep_valido', true);
-        session()->flash('cep_mensagem', 'CEP encontrado com sucesso!');
-
-        return redirect()->back();
-
-    }
-
-    public function removerCupom(): RedirectResponse
-    {
-        session()->forget('cupom_codigo');
-        session()->forget('cupom_validado');
-        session()->forget('cupom_mensagem');
-
-        return redirect()->back()->with('success', 'Cupom removido com sucesso.');
-    }
-
-    public function removerCep(): RedirectResponse
-    {
-        session()->forget('cep');
-        session()->forget('cep_valido');
-        session()->forget('cep_mensagem');
-        session()->forget('cep_dados');
-
-        return redirect()->back()->with('success', 'CEP removido com sucesso.');
+        return match (true) {
+            $subtotal >= 200.00 => 0.00,
+            $subtotal >= 52.00 && $subtotal <= 166.59 => 15.00,
+            default => 20.00,
+        };
     }
 }

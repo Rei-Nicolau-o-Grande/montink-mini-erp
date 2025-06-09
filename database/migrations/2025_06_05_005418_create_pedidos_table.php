@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('frete', 15, 2);
             $table->enum('status', array_column(StatusPedidos::cases(), 'name'))->default(StatusPedidos::AGUARDANDO->name);
             $table->string('email_cliente');
+            $table->string('cupom')->nullable();
             $table->string('cep');
             $table->string('logradouro');
             $table->string('complemento')->nullable();

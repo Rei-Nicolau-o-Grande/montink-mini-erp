@@ -14,6 +14,7 @@ class Pedido extends Model
         'frete',
         'status',
         'email_cliente',
+        'cupom',
         'cep',
         'logradouro',
         'complemento',
@@ -28,5 +29,10 @@ class Pedido extends Model
     public function produtos(): HasMany
     {
         return $this->hasMany(Produto::class);
+    }
+
+    public function pedidoProdutos(): HasMany
+    {
+        return $this->hasMany(PedidoProduto::class);
     }
 }

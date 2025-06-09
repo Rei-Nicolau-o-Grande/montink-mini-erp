@@ -3,6 +3,7 @@
 use App\Http\Controllers\CarrinhoController;
 use App\Http\Controllers\CupomController;
 use App\Http\Controllers\ProdutoController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [ProdutoController::class, 'index'])->name('produto.index');
@@ -19,6 +20,9 @@ Route::post('/carrinho/cep/buscar',   [CarrinhoController::class, 'buscarCep'])-
 
 Route::post('/carrinho/cupom/remover', [CarrinhoController::class, 'removerCupom'])->name('cupom.remover');
 Route::post('/carrinho/cep/remover', [CarrinhoController::class, 'removerCep'])->name('cep.remover');
+
+Route::post('/carrinho/pedido/enviar', [CarrinhoController::class, 'finalizarPedido'])->name('finalizar.pedido');
+Route::post('/webhook/pedido-status', [WebhookController::class, 'receberStatus'])->name('web.hook.status.pedido');
 
 Route::get('/cupons', [CupomController::class, 'index'])->name('cupons.index');
 Route::get('/cupons/create', [CupomController::class, 'create'])->name('cupons.create');

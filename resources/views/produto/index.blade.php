@@ -26,5 +26,11 @@
         <x-produto-card :produtos="$produtos" />
     </div>
 
+    @if ($produtos->hasPages())
+        <div class="my-5 mx-5 justify-items-end">
+            {{ $produtos->links() }}
+        </div>
+    @endif
+
 @endsection
 

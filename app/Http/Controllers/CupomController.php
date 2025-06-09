@@ -16,7 +16,8 @@ class CupomController extends Controller
     public function index(): View
     {
 
-        $cupons = Cupom::all();
+        $cupons = Cupom::orderBy('created_at', 'desc')
+            ->paginate(15);
 
         return view('cupom.index',  compact('cupons'));
     }

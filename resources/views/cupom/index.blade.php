@@ -59,5 +59,12 @@
                 </tbody>
             </table>
         </div>
+        @if ($cupons->hasPages())
+            <div class="my-5 mx-5 justify-items-end">
+                {{ $cupons->links() }}
+            </div>
+        @endif
     </div>
+
+
 @endsection
